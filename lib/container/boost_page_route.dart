@@ -21,29 +21,38 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-
 import 'package:flutter/widgets.dart';
 import 'package:flutter/material.dart';
 
-typedef PageBuilder = Widget Function(
-    String pageName, Map<String, dynamic> params, String uniqueId);
+typedef Widget PageBuilder(String pageName, Map params, String uniqueId);
 
 class BoostPageRoute<T> extends MaterialPageRoute<T> {
-  BoostPageRoute({
-    this.pageName,
-    this.params,
-    this.uniqueId,
-    this.animated,
-    WidgetBuilder builder,
-    RouteSettings settings,
-  }) : super(builder: builder, settings: settings);
-
   final String pageName;
   final String uniqueId;
-  final Map<String, dynamic> params;
+  final Map params;
   final bool animated;
+  final WidgetBuilder builder;
+  final RouteSettings settings;
 
-  final Set<VoidCallback> backPressedListeners = <VoidCallback>{};
+  final Set<VoidCallback> backPressedListeners = Set<VoidCallback>();
+
+  @override
+  Widget buildTransitions(BuildContext context, Animation<double> animation,
+      Animation<double> secondaryAnimation, Widget child) {
+    return super.buildTransitions(context, animation, secondaryAnimation, child);
+  }
+
+  BoostPageRoute(
+      {Key stubKey,
+      this.pageName,
+      this.params,
+      this.uniqueId,
+      this.animated,
+      this.builder,
+      this.settings})
+      : super(
+            builder: (BuildContext context) => Stub(stubKey, builder(context)),
+            settings: settings);
 
   static BoostPageRoute<T> of<T>(BuildContext context) {
     final Route<T> route = ModalRoute.of(context);
@@ -62,9 +71,19 @@ class BoostPageRoute<T> extends MaterialPageRoute<T> {
       return null;
     }
   }
+}
+
+@immutable
+class Stub extends StatefulWidget {
+  final Widget child;
+
+  const Stub(Key key, this.child) : super(key: key);
 
   @override
-  Future<RoutePopDisposition> willPop() {
-    return Future<RoutePopDisposition>.value(RoutePopDisposition.pop);
-  }
+  _StubState createState() => _StubState();
+}
+
+class _StubState extends State<Stub> {
+  @override
+  Widget build(BuildContext context) => widget.child;
 }

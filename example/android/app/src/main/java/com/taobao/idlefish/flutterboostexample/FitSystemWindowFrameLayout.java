@@ -4,14 +4,14 @@ import android.annotation.TargetApi;
 import android.content.Context;
 import android.os.Build;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
+import androidx.core.view.ViewCompat;
 import android.util.AttributeSet;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowInsets;
 import android.widget.FrameLayout;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
-import androidx.core.view.ViewCompat;
 
 
 public class FitSystemWindowFrameLayout extends FrameLayout {

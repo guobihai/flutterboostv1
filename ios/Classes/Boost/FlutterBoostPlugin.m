@@ -67,15 +67,8 @@
                                                         result(@(r));
                                                     }];
     }else if([@"onShownContainerChanged" isEqualToString:call.method]){
-        NSDictionary *args = [FLBCollectionHelper deepCopyNSDictionary:call.arguments
-        filter:^bool(id  _Nonnull value) {
-            return ![value isKindOfClass:NSNull.class];
-        }];
-        
-        NSString *newName = args[@"newName"];
-        NSString *uid = args[@"uniqueId"];
+        NSString *newName = call.arguments[@"newName"];
         if(newName){
-            [[FlutterBoostPlugin sharedInstance].application onShownContainerChanged:uid params:args];
             [NSNotificationCenter.defaultCenter postNotificationName:@"flutter_boost_container_showed"
                                                               object:newName];
         }
@@ -95,13 +88,27 @@
                                                          exts:exts
                                                         onPageFinished:result
                                                    completion:^(BOOL r) {}];
-    }else if([@"pageOnStart" isEqualToString:call.method]){
+    } else if([@"pageOnStart" isEqualToString:call.method]){
         NSMutableDictionary *pageInfo = [NSMutableDictionary new];
         pageInfo[@"name"] =[FlutterBoostPlugin sharedInstance].fPagename;
         pageInfo[@"params"] = [FlutterBoostPlugin sharedInstance].fParams;
         pageInfo[@"uniqueId"] = [FlutterBoostPlugin sharedInstance].fPageId;
         if(result) result(pageInfo);
-    }else{
+    } else if([@"disablePopGesture" isEqualToString:call.method]) {
+        
+        
+        FLBFlutterViewContainer *flutterViewController = [FlutterBoostPlugin sharedInstance].application.flutterViewController;
+        if ([flutterViewController isKindOfClass:flutterViewController.class]) {
+            flutterViewController.navigationController.interactivePopGestureRecognizer.enabled = NO;
+            flutterViewController.disablePopGesture = @(YES);
+        }
+    } else if([@"enablePopGesture" isEqualToString:call.method]){
+        FLBFlutterViewContainer *flutterViewController = [FlutterBoostPlugin sharedInstance].application.flutterViewController;
+        if ([flutterViewController isKindOfClass:flutterViewController.class]) {
+            flutterViewController.navigationController.interactivePopGestureRecognizer.enabled = YES;
+            flutterViewController.disablePopGesture = @(NO);
+        }
+    } else{
         result(FlutterMethodNotImplemented);
     }
 }

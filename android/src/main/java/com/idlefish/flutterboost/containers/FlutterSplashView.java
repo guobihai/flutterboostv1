@@ -4,8 +4,6 @@ import android.content.Context;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.Parcel;
-import android.os.Parcelable;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import android.util.AttributeSet;
@@ -31,7 +29,7 @@ public class FlutterSplashView extends FrameLayout {
     @Nullable
     private SplashScreen splashScreen;
     @Nullable
-    private XFlutterView flutterView;
+    private FlutterView flutterView;
     @Nullable
     private View splashScreenView;
     @Nullable
@@ -105,7 +103,7 @@ public class FlutterSplashView extends FrameLayout {
      * If no {@code splashScreen} is provided, this {@code FlutterSplashView} displays the
      * given {@code flutterView} on its own.
      */
-    public void displayFlutterViewWithSplash(@NonNull XFlutterView flutterView, @Nullable SplashScreen splashScreen) {
+    public void displayFlutterViewWithSplash(@NonNull FlutterView flutterView, @Nullable SplashScreen splashScreen) {
         // If we were displaying a previous FlutterView, remove it.
         if (this.flutterView != null) {
             this.flutterView.removeOnFirstFrameRenderedListener(onFirstFrameRenderedListener);

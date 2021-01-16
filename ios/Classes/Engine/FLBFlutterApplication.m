@@ -235,13 +235,4 @@
     }
 }
 
-- (void)onShownContainerChanged:(NSString *)uniqueId
-                         params:(NSDictionary *)params{
-    NSString *oldName = params[@"oldName"];
-    NSString *newName = params[@"newName"];
-    if (oldName!=nil && [newName isEqualToString:@"default"]) {
-        [self.flutterProvider detach];
-    }
-}
-
 @end

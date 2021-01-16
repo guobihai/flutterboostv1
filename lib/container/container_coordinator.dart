@@ -27,25 +27,23 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
-
 import '../channel/boost_channel.dart';
+import 'boost_container.dart';
 import '../flutter_boost.dart';
 import '../support/logger.dart';
-import 'boost_container.dart';
+
+class BoostRouteSettings {
+  final String uniqueId;
+  final String name;
+  final Map params;
+
+  const BoostRouteSettings({this.uniqueId, this.name, this.params});
+}
+
+typedef BoostRouteSettings BoostRouteSettingsBuilder(String url,
+    {Map<String, dynamic> urlParams, Map<String, dynamic> exts});
 
 class ContainerCoordinator {
-  ContainerCoordinator(BoostChannel channel) : assert(_instance == null) {
-    _instance = this;
-
-    channel
-      ..addEventListener(
-        'lifecycle',
-        (String name, Map<String, dynamic> arguments) =>
-            _onChannelEvent(arguments),
-      )
-      ..addMethodHandler((MethodCall call) => _onMethodCall(call));
-  }
-
   static ContainerCoordinator get singleton => _instance;
 
   static ContainerCoordinator _instance;
@@ -53,11 +51,21 @@ class ContainerCoordinator {
   final Map<String, PageBuilder> _pageBuilders = <String, PageBuilder>{};
   PageBuilder _defaultPageBuilder;
 
+  BoostRouteSettingsBuilder _routeSettingsBuilder;
+
+  ContainerCoordinator(BoostChannel channel) {
+    assert(_instance == null);
+
+    _instance = this;
+
+    channel.addEventListener("lifecycle",
+        (String name, Map arguments) => _onChannelEvent(arguments));
+
+    channel.addMethodHandler((MethodCall call) => _onMethodCall(call));
+  }
+
   BoostContainerSettings _createContainerSettings(
-    String name,
-    Map<String, dynamic> params,
-    String pageId,
-  ) {
+      String name, Map params, String pageId) {
     Widget page;
 
     final BoostContainerSettings routeSettings = BoostContainerSettings(
@@ -65,15 +73,8 @@ class ContainerCoordinator {
         name: name,
         params: params,
         builder: (BuildContext ctx) {
-          // Try to build a page using keyed builder.
-          if (_pageBuilders[name] != null) {
-            page = _pageBuilders[name](name, params, pageId);
-          }
 
-          // Build a page using default builder.
-          if (page == null && _defaultPageBuilder != null) {
-            page = _defaultPageBuilder(name, params, pageId);
-          }
+          page = createPage(name, params, pageId);
 
           assert(page != null);
           Logger.log('build widget:$page for page:$name($pageId)');
@@ -84,12 +85,49 @@ class ContainerCoordinator {
     return routeSettings;
   }
 
-  /// Register a default page builder.
+  bool  isFlutterPageUrl(String url){
+
+    return _pageBuilders.containsKey(url);
+  }
+
+  Widget createPage(String name, Map params, String pageId) {
+    Widget page;
+
+    //Try to build a page using keyed builder.
+    if (_pageBuilders[name] != null) {
+      page = _pageBuilders[name](name, params, pageId);
+    }
+
+    //Build a page using default builder.
+    if (page == null && _defaultPageBuilder != null) {
+      page = _defaultPageBuilder(name, params, pageId);
+    }
+
+    return page;
+  }
+
+  BoostRouteSettings createRouteSettings(String url,
+      {Map<String, dynamic> urlParams, Map<String, dynamic> exts}) {
+    if (_routeSettingsBuilder != null) {
+      return _routeSettingsBuilder(url, urlParams:urlParams,exts:exts);
+    }
+
+    return BoostRouteSettings(
+        uniqueId: '${url}_${DateTime.now().millisecondsSinceEpoch}',
+        name: url,
+        params: urlParams);
+  }
+
+  void registerRouteSettingsBuilder(BoostRouteSettingsBuilder builder) {
+    _routeSettingsBuilder = builder;
+  }
+
+  //Register a default page builder.
   void registerDefaultPageBuilder(PageBuilder builder) {
     _defaultPageBuilder = builder;
   }
 
-  /// Register page builder for a key.
+  //Register page builder for a key.
   void registerPageBuilder(String pageName, PageBuilder builder) {
     if (pageName != null && builder != null) {
       _pageBuilders[pageName] = builder;
@@ -103,35 +141,41 @@ class ContainerCoordinator {
   }
 
   Future<dynamic> _onChannelEvent(dynamic event) {
-    if (event is Map<String, dynamic>) {
-      final Map<String, dynamic> map = event;
-      final String type = map['type'] as String;
+    if (event is Map) {
+      Map map = event;
+      final String type = map['type'];
 
       Logger.log('onEvent $type');
 
       switch (type) {
-        // Handler back key pressed event.
+        //Handler back key pressed event.
         case 'backPressedCallback':
-          final String id = map['uniqueId'] as String;
-          FlutterBoost.containerManager
-              ?.containerStateOf(id)
-              ?.performBackPressed();
+          {
+            final String id = map['uniqueId'];
+            FlutterBoost.containerManager
+                ?.containerStateOf(id)
+                ?.performBackPressed();
+          }
           break;
-        // Enter foreground
+        //Enter foregroud
         case 'foreground':
-          FlutterBoost.containerManager?.setForeground();
+          {
+            FlutterBoost.containerManager?.setForeground();
+          }
           break;
-        // Enter background
+        //Enter background
         case 'background':
-          FlutterBoost.containerManager?.setBackground();
+          {
+            FlutterBoost.containerManager?.setBackground();
+          }
           break;
-        // Schedule a frame.
+        //Schedule a frame.
         case 'scheduleFrame':
-          WidgetsBinding.instance.scheduleForcedFrame();
-          Future<dynamic>.delayed(
-            const Duration(milliseconds: 250),
-            () => WidgetsBinding.instance.scheduleFrame(),
-          );
+          {
+            WidgetsBinding.instance.scheduleForcedFrame();
+            Future<dynamic>.delayed(Duration(milliseconds: 250),
+                () => WidgetsBinding.instance.scheduleFrame());
+          }
           break;
       }
     }
@@ -140,52 +184,72 @@ class ContainerCoordinator {
   }
 
   Future<dynamic> _onMethodCall(MethodCall call) {
-    Logger.log('onMetohdCall ${call.method}');
-
-    final String pageName = call.arguments['pageName'] as String;
-    final Map<String, dynamic> params =
-        (call.arguments['params'] as Map<dynamic, dynamic>)
-            ?.cast<String, dynamic>();
-    final String uniqueId = call.arguments['uniqueId'] as String;
+    Logger.log("onMetohdCall ${call.method}");
 
     switch (call.method) {
-      case 'didInitPageContainer':
-        _nativeContainerDidInit(pageName, params, uniqueId);
+      case "didInitPageContainer":
+        {
+          String pageName = call.arguments["pageName"];
+          Map params = call.arguments["params"];
+          String uniqueId = call.arguments["uniqueId"];
+          _nativeContainerDidInit(pageName, params, uniqueId);
+        }
         break;
-      case 'willShowPageContainer':
-        _nativeContainerWillShow(pageName, params, uniqueId);
+      case "willShowPageContainer":
+        {
+          String pageName = call.arguments["pageName"];
+          Map params = call.arguments["params"];
+          String uniqueId = call.arguments["uniqueId"];
+          _nativeContainerWillShow(pageName, params, uniqueId);
+        }
         break;
-      case 'didShowPageContainer':
-        nativeContainerDidShow(pageName, params, uniqueId);
+      case "didShowPageContainer":
+        {
+          String pageName = call.arguments["pageName"];
+          Map params = call.arguments["params"];
+          String uniqueId = call.arguments["uniqueId"];
+          nativeContainerDidShow(pageName, params, uniqueId);
+        }
         break;
-      case 'willDisappearPageContainer':
-        _nativeContainerWillDisappear(pageName, params, uniqueId);
+      case "willDisappearPageContainer":
+        {
+          String pageName = call.arguments["pageName"];
+          Map params = call.arguments["params"];
+          String uniqueId = call.arguments["uniqueId"];
+          _nativeContainerWillDisappear(pageName, params, uniqueId);
+        }
         break;
-      case 'didDisappearPageContainer':
-        _nativeContainerDidDisappear(pageName, params, uniqueId);
+      case "didDisappearPageContainer":
+        {
+          String pageName = call.arguments["pageName"];
+          Map params = call.arguments["params"];
+          String uniqueId = call.arguments["uniqueId"];
+          _nativeContainerDidDisappear(pageName, params, uniqueId);
+        }
         break;
-      case 'willDeallocPageContainer':
-        _nativeContainerWillDealloc(pageName, params, uniqueId);
+      case "willDeallocPageContainer":
+        {
+          String pageName = call.arguments["pageName"];
+          Map params = call.arguments["params"];
+          String uniqueId = call.arguments["uniqueId"];
+          _nativeContainerWillDealloc(pageName, params, uniqueId);
+        }
         break;
-      case 'onNativePageResult':
+      case "onNativePageResult":
+        {}
         break;
     }
 
     return Future<dynamic>(() {});
   }
 
-  bool _nativeContainerWillShow(
-    String name,
-    Map<String, dynamic> params,
-    String pageId,
-  ) {
+  bool _nativeContainerWillShow(String name, Map params, String pageId) {
     if (FlutterBoost.containerManager?.containsContainer(pageId) != true) {
-      FlutterBoost.containerManager?.pushContainer(
-        _createContainerSettings(name, params, pageId),
-      );
+      FlutterBoost.containerManager
+          ?.pushContainer(_createContainerSettings(name, params, pageId));
     }
 
-    // TODO(unknown): 需要验证android代码是否也可以移到这里
+    //TODO, 需要验证android代码是否也可以移到这里
     if (Platform.isIOS) {
       try {
         final SemanticsOwner owner =
@@ -200,114 +264,72 @@ class ContainerCoordinator {
     return true;
   }
 
-  bool nativeContainerDidShow(
-    String name,
-    Map<String, dynamic> params,
-    String pageId,
-  ) {
+  bool nativeContainerDidShow(String name, Map params, String pageId) {
     FlutterBoost.containerManager
         ?.showContainer(_createContainerSettings(name, params, pageId));
 
-    // Compatible to accessibility mode on Android.
-    if (Platform.isAndroid) {
-      try {
-        final SemanticsOwner owner =
-            WidgetsBinding.instance.pipelineOwner?.semanticsOwner;
-        final SemanticsNode root = owner?.rootSemanticsNode;
-        root?.detach();
-        root?.attach(owner);
-      } catch (e) {
-        assert(false, e.toString());
-      }
+    //对无障碍辅助模式的兼容
+    try {
+      final SemanticsOwner owner =
+          WidgetsBinding.instance.pipelineOwner?.semanticsOwner;
+      final SemanticsNode root = owner?.rootSemanticsNode;
+      root?.detach();
+      root?.attach(owner);
+    } catch (e) {
+      assert(false, e.toString());
     }
 
-    performContainerLifeCycle(
-      _createContainerSettings(name, params, pageId),
-      ContainerLifeCycle.Appear,
-    );
+    performContainerLifeCycle(_createContainerSettings(name, params, pageId),
+        ContainerLifeCycle.Appear);
 
     Logger.log(
-      'native containner did show-$name,\n'
-      'manager dump:\n'
-      '${FlutterBoost.containerManager?.dump()}',
-    );
+        'native containner did show-$name,\nmanager dump:\n${FlutterBoost.containerManager?.dump()}');
 
     return true;
   }
 
-  bool _nativeContainerWillDisappear(
-    String name,
-    Map<String, dynamic> params,
-    String pageId,
-  ) {
-    performContainerLifeCycle(
-      _createContainerSettings(name, params, pageId),
-      ContainerLifeCycle.WillDisappear,
-    );
+  bool _nativeContainerWillDisappear(String name, Map params, String pageId) {
+    performContainerLifeCycle(_createContainerSettings(name, params, pageId),
+        ContainerLifeCycle.WillDisappear);
     return true;
   }
 
-  bool _nativeContainerDidDisappear(
-    String name,
-    Map<String, dynamic> params,
-    String pageId,
-  ) {
-    performContainerLifeCycle(
-      _createContainerSettings(name, params, pageId),
-      ContainerLifeCycle.Disappear,
-    );
+  bool _nativeContainerDidDisappear(String name, Map params, String pageId) {
+    performContainerLifeCycle(_createContainerSettings(name, params, pageId),
+        ContainerLifeCycle.Disappear);
     return true;
   }
 
-  bool _nativeContainerDidInit(
-    String name,
-    Map<String, dynamic> params,
-    String pageId,
-  ) {
-    performContainerLifeCycle(
-      _createContainerSettings(name, params, pageId),
-      ContainerLifeCycle.Init,
-    );
+  bool _nativeContainerDidInit(String name, Map params, String pageId) {
+    performContainerLifeCycle(_createContainerSettings(name, params, pageId),
+        ContainerLifeCycle.Init);
     return true;
   }
 
-  bool _nativeContainerWillDealloc(
-      String name, Map<String, dynamic> params, String pageId) {
+  bool _nativeContainerWillDealloc(String name, Map params, String pageId) {
     try {
-      performContainerLifeCycle(
-        _createContainerSettings(name, params, pageId),
-        ContainerLifeCycle.Destroy,
-      );
+      performContainerLifeCycle(_createContainerSettings(name, params, pageId),
+          ContainerLifeCycle.Destroy);
     } catch (e) {
-      Logger.log('nativeContainerWillDealloc error: $e');
+      Logger.log('nativeContainerWillDealloc error: ${e}');
     }
     FlutterBoost.containerManager?.remove(pageId);
 
     Logger.log(
-      'native containner dealloc for $name, \n'
-      'manager dump:\n'
-      '${FlutterBoost.containerManager?.dump()}',
-    );
+        'native containner dealloc for $name, \n manager dump:\n${FlutterBoost.containerManager?.dump()}');
 
     return true;
   }
 
   static void performContainerLifeCycle(
-    BoostContainerSettings settings,
-    ContainerLifeCycle lifeCycle,
-  ) {
-    final Set<BoostContainerLifeCycleObserver> observers = FlutterBoost
+      BoostContainerSettings settings, ContainerLifeCycle lifeCycle) {
+    for (BoostContainerLifeCycleObserver observer in FlutterBoost
         .singleton.observersHolder
-        .observersOf<BoostContainerLifeCycleObserver>();
-
-    for (final BoostContainerLifeCycleObserver observer in observers) {
+        .observersOf<BoostContainerLifeCycleObserver>()) {
       observer(lifeCycle, settings);
     }
 
     Logger.log(
-      'BoostContainerLifeCycleObserver'
-      'container:${settings.name}'
-      'lifeCycle:$lifeCycle',
-    );
+        'BoostContainerLifeCycleObserver container:${settings.name} lifeCycle:$lifeCycle');
   }
 }

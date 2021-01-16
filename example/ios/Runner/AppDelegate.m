@@ -23,22 +23,8 @@
     PlatformRouterImp *router = [PlatformRouterImp new];
     [FlutterBoostPlugin.sharedInstance startFlutterWithPlatform:router
                                                         onStart:^(FlutterEngine *engine) {
-        
-        // 注册MethodChannel，监听flutter侧的getPlatformVersion调用
-        FlutterMethodChannel *flutterMethodChannel = [FlutterMethodChannel methodChannelWithName:@"flutter_native_channel" binaryMessenger:engine.binaryMessenger];
-        
-        [flutterMethodChannel setMethodCallHandler:^(FlutterMethodCall * _Nonnull call, FlutterResult  _Nonnull result) {
-            
-            NSString *method = call.method;
-            if ([method isEqualToString:@"getPlatformVersion"]) {
-                NSString *sysVersion = [[UIDevice currentDevice] systemVersion];
-                result(sysVersion);
-            } else {
-                result(FlutterMethodNotImplemented);
-            }
-            
-        }];
-    }];
+                                                            
+                                                        }];
     
     self.window = [[UIWindow alloc] initWithFrame: [UIScreen mainScreen].bounds];
     
@@ -75,7 +61,7 @@
     UIButton *pushEmbeded = [UIButton buttonWithType:UIButtonTypeCustom];
     pushEmbeded.frame = CGRectMake(self.window.frame.size.width * 0.5 - 70, 150, 140, 40);
     pushEmbeded.backgroundColor = [UIColor redColor];
-    [pushEmbeded setTitle:@"push embeded" forState:UIControlStateNormal];
+    [pushEmbeded setTitle:@"push embedded" forState:UIControlStateNormal];
     [pushEmbeded addTarget:self action:@selector(pushEmbeded) forControlEvents:UIControlEventTouchUpInside];
     [self.window addSubview:pushEmbeded];
     

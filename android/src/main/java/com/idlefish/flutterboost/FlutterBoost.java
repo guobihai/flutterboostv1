@@ -4,21 +4,26 @@ package com.idlefish.flutterboost;
 import android.app.Activity;
 import android.app.Application;
 import android.content.Context;
-import android.content.Intent;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
+
 import com.idlefish.flutterboost.interfaces.*;
+
+import io.flutter.embedding.android.FlutterEngineProvider;
 import io.flutter.embedding.android.FlutterView;
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.embedding.engine.FlutterShellArgs;
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.embedding.engine.loader.FlutterLoader;
+import io.flutter.plugin.common.PluginRegistry;
 import io.flutter.view.FlutterMain;
 
 import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class FlutterBoost {
@@ -33,6 +38,7 @@ public class FlutterBoost {
 
     private long FlutterPostFrameCallTime = 0;
     private Application.ActivityLifecycleCallbacks mActivityLifecycleCallbacks;
+    private PluginRegistry mRegistry;
 
     public long getFlutterPostFrameCallTime() {
         return FlutterPostFrameCallTime;
@@ -51,7 +57,7 @@ public class FlutterBoost {
 
     public void init(Platform platform) {
         if (sInit){
-            Debuger.log("FlutterBoost is already initialized. Don't initialize it twice");
+            Debuger.log("FlutterBoost is alread inited. Do not init twice");
             return;
         }
 
@@ -65,18 +71,6 @@ public class FlutterBoost {
                 //fix crash：'FlutterBoostPlugin not register yet'
                 //case: initFlutter after Activity.OnCreate method，and then called start/stop crash
                 // In SplashActivity ,showDialog(in OnCreate method) to check permission, if authorized, then init sdk and jump homePage)
-
-                // fix bug : The LauncherActivity will be launch by clicking app icon when app enter background in HuaWei Rom, cause missing forgoround event
-                if(mEnterActivityCreate && mCurrentActiveActivity == null) {
-                    Intent intent = activity.getIntent();
-                    if (!activity.isTaskRoot()
-                            && intent != null
-                            && intent.hasCategory(Intent.CATEGORY_LAUNCHER)
-                            && intent.getAction() != null
-                            && intent.getAction().equals(Intent.ACTION_MAIN)) {
-                        return;
-                    }
-                }
                 mEnterActivityCreate = true;
                 mCurrentActiveActivity = activity;
                 if (mPlatform.whenEngineStart() == ConfigBuilder.ANY_ACTIVITY_CREATED) {
@@ -189,7 +183,7 @@ public class FlutterBoost {
         }
         DartExecutor.DartEntrypoint entrypoint = new DartExecutor.DartEntrypoint(
                 FlutterMain.findAppBundlePath(),
-                mPlatform.dartEntrypoint()
+                "main"
         );
 
         flutterEngine.getDartExecutor().executeDartEntrypoint(entrypoint);
@@ -224,7 +218,11 @@ public class FlutterBoost {
 
         private INativeRouter router = null;
 
+        private List<String> shellArgs;
+
         private BoostLifecycleListener lifecycleListener;
+
+        private FlutterEngineProvider flutterEngineProvider = null;
 
 
 
@@ -259,9 +257,18 @@ public class FlutterBoost {
             return this;
         }
 
-
         public ConfigBuilder lifecycleListener(BoostLifecycleListener lifecycleListener) {
             this.lifecycleListener = lifecycleListener;
+            return this;
+        }
+
+        public ConfigBuilder flutterEngineProvider(FlutterEngineProvider flutterEngineProvider) {
+            this.flutterEngineProvider = flutterEngineProvider;
+            return this;
+        }
+
+        public ConfigBuilder shellArgs(List<String> shellArgs) {
+            this.shellArgs = shellArgs;
             return this;
         }
 
@@ -277,9 +284,6 @@ public class FlutterBoost {
 
                     return ConfigBuilder.this.isDebug;
                 }
-
-                @Override
-                public String dartEntrypoint() { return ConfigBuilder.this.dartEntrypoint; }
 
                 @Override
                 public String initialRoute() {
@@ -299,11 +303,18 @@ public class FlutterBoost {
                 public FlutterView.RenderMode renderMode() {
                     return ConfigBuilder.this.renderMode;
                 }
+
+                public List<String> shellArgs() {
+                    return ConfigBuilder.this.shellArgs;
+                }
+
+                public  FlutterEngineProvider flutterEngineProvider() {
+                    return flutterEngineProvider;
+                }
             };
 
             platform.lifecycleListener = this.lifecycleListener;
             return platform;
-
         }
 
     }
@@ -333,13 +344,20 @@ public class FlutterBoost {
         if (mEngine == null) {
             FlutterMain.startInitialization(mPlatform.getApplication());
 
-            FlutterShellArgs flutterShellArgs = new FlutterShellArgs(new String[0]);
+            FlutterShellArgs flutterShellArgs = new FlutterShellArgs(mPlatform.shellArgs() != null ? mPlatform.shellArgs() : Arrays.asList(new String[0]));
             FlutterMain.ensureInitializationComplete(
                     mPlatform.getApplication().getApplicationContext(), flutterShellArgs.toArray());
+            if (mPlatform.flutterEngineProvider() != null) {
+                mEngine = mPlatform.flutterEngineProvider().provideFlutterEngine(mPlatform.getApplication().getApplicationContext());
+            }
 
-            mEngine = new FlutterEngine(mPlatform.getApplication().getApplicationContext(),FlutterLoader.getInstance(),new FlutterJNI(),null,false);
+            if (mEngine == null) {
+                mEngine = new FlutterEngine(mPlatform.getApplication().getApplicationContext(),FlutterLoader.getInstance(),new FlutterJNI(),null,false);
+            }
+
             registerPlugins(mEngine);
-
+          //  mRegistry = new BoostPluginRegistry(createEngine());
+          //  mPlatform.registerPlugins(mRegistry);
         }
         return mEngine;
 

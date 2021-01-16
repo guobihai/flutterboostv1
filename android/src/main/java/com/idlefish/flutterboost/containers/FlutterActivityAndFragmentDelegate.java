@@ -5,14 +5,13 @@ import android.app.Activity;
 import androidx.lifecycle.Lifecycle;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Color;
 import android.graphics.PixelFormat;
 import android.os.Build;
 import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
+import android.view.*;
 
 import java.io.Serializable;
 import java.util.Arrays;
@@ -22,8 +21,6 @@ import java.util.Map;
 
 import com.idlefish.flutterboost.FlutterBoost;
 import com.idlefish.flutterboost.Utils;
-import com.idlefish.flutterboost.XFlutterView;
-import com.idlefish.flutterboost.XPlatformPlugin;
 import com.idlefish.flutterboost.interfaces.IFlutterViewContainer;
 import com.idlefish.flutterboost.interfaces.IOperateSyncer;
 import io.flutter.Log;
@@ -31,8 +28,7 @@ import io.flutter.app.FlutterActivity;
 import io.flutter.embedding.android.*;
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.FlutterShellArgs;
-import io.flutter.embedding.engine.plugins.activity.ActivityControlSurface;
-import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding;
+
 import io.flutter.plugin.platform.PlatformPlugin;
 
 import static android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW;
@@ -49,9 +45,9 @@ public class FlutterActivityAndFragmentDelegate implements IFlutterViewContainer
     @Nullable
     private FlutterSplashView flutterSplashView;
     @Nullable
-    private XFlutterView flutterView;
+    private FlutterView flutterView;
     @Nullable
-    private XPlatformPlugin platformPlugin;
+    private PlatformPlugin platformPlugin;
 
     private boolean isFlutterEngineFromHost;
 
@@ -76,7 +72,7 @@ public class FlutterActivityAndFragmentDelegate implements IFlutterViewContainer
         return flutterEngine;
     }
 
-    public XFlutterView getFlutterView() {
+    public FlutterView getFlutterView() {
         return flutterView;
     }
 
@@ -97,12 +93,28 @@ public class FlutterActivityAndFragmentDelegate implements IFlutterViewContainer
         // TODO(mattcarroll): the PlatformPlugin needs to be reimagined because it implicitly takes
         //                    control of the entire window. This is unacceptable for non-fullscreen
         //                    use-cases.
-        platformPlugin = host.providePlatformPlugin(flutterEngine);
+        platformPlugin = host.providePlatformPlugin(host.getActivity(), flutterEngine);
 
 
         host.configureFlutterEngine(flutterEngine);
 
         host.getActivity().getWindow().setFormat(PixelFormat.TRANSLUCENT);
+
+        if (host.shouldAttachEngineToActivity()) {
+            // Notify any plugins that are currently attached to our FlutterEngine that they
+            // are now attached to an Activity.
+            //
+            // Passing this Fragment's Lifecycle should be sufficient because as long as this Fragment
+            // is attached to its Activity, the lifecycles should be in sync. Once this Fragment is
+            // detached from its Activity, that Activity will be detached from the FlutterEngine, too,
+            // which means there shouldn't be any possibility for the Fragment Lifecycle to get out of
+            // sync with the Activity. We use the Fragment's Lifecycle because it is possible that the
+            // attached Activity is not a LifecycleOwner.
+            Log.v(TAG, "Attaching FlutterEngine to the Activity that owns this Fragment.");
+            flutterEngine
+                    .getActivityControlSurface()
+                    .attachToActivity(host.getActivity(), host.getLifecycle());
+        }
     }
 
 
@@ -134,10 +146,11 @@ public class FlutterActivityAndFragmentDelegate implements IFlutterViewContainer
         mSyncer = FlutterBoost.instance().containerManager().generateSyncer(this);
 
         ensureAlive();
-        flutterView = new XFlutterView(host.getActivity(), FlutterBoost.instance().platform().renderMode(), host.getTransparencyMode());
+        flutterView = new FlutterView(host.getActivity(), FlutterBoost.instance().platform().renderMode(), host.getTransparencyMode());
 
 
         flutterSplashView = new FlutterSplashView(host.getContext());
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
             flutterSplashView.setId(View.generateViewId());
         } else {
@@ -166,39 +179,34 @@ public class FlutterActivityAndFragmentDelegate implements IFlutterViewContainer
 
 
     public void onResume() {
+        if(mSyncer.isLocked()) return;
+
         mSyncer.onAppear();
 
         Log.v(TAG, "onResume()");
         ensureAlive();
         flutterEngine.getLifecycleChannel().appIsResumed();
-        if(ACTIVITY_CONTROL_SURFACE_ATTACH_TO_ACTVITY_HASH_CODE==0||
-                ACTIVITY_CONTROL_SURFACE_ATTACH_TO_ACTVITY_HASH_CODE!=this.host.getActivity().hashCode()){
-            flutterEngine.getActivityControlSurface().detachFromActivityForConfigChanges();
-            flutterEngine.getActivityControlSurface().attachToActivity(
-                    host.getActivity(),
-                    host.getLifecycle()
-            );
-            ACTIVITY_CONTROL_SURFACE_ATTACH_TO_ACTVITY_HASH_CODE=this.host.getActivity().hashCode();
-        }
-
-
-        if(platformPlugin!=null)
-            platformPlugin.attachToActivity( host.getActivity());
 
 
     }
 
 
-    public void onPostResume() {
+    void onPostResume() {
         Log.v(TAG, "onPostResume()");
         ensureAlive();
-
+        if (flutterEngine != null) {
+            if (platformPlugin != null) {
+                platformPlugin.updateSystemUiOverlays();
+            }
+        } else {
+            Log.w(TAG, "onPostResume() invoked before FlutterFragment was attached to an Activity.");
+        }
     }
 
 
     public void onPause() {
         Log.v(TAG, "onPause()");
-
+        if(mSyncer.isLocked()) return;
         ensureAlive();
         mSyncer.onDisappear();
         flutterEngine.getLifecycleChannel().appIsInactive();
@@ -217,28 +225,26 @@ public class FlutterActivityAndFragmentDelegate implements IFlutterViewContainer
         mSyncer.onDestroy();
 
         ensureAlive();
-
-        flutterView.release();
     }
 
 
     public void onDetach() {
         Log.v(TAG, "onDetach()");
         ensureAlive();
-
-
-        // Null out the platformPlugin to avoid a possible retain cycle between the plugin, this Fragment,
-        // and this Fragment's Activity.
         if (platformPlugin != null) {
-            platformPlugin.detachActivity(getContextActivity());
+            platformPlugin.destroy();
             platformPlugin = null;
         }
 
-        if(ACTIVITY_CONTROL_SURFACE_ATTACH_TO_ACTVITY_HASH_CODE!=0||
-                ACTIVITY_CONTROL_SURFACE_ATTACH_TO_ACTVITY_HASH_CODE==this.host.getActivity().hashCode()){
-            flutterEngine.getActivityControlSurface().detachFromActivityForConfigChanges();
+        if (host.shouldAttachEngineToActivity()) {
+            // Notify plugins that they are no longer attached to an Activity.
+            Log.v(TAG, "Detaching FlutterEngine from the Activity that owns this Fragment.");
+            if (host.getActivity().isChangingConfigurations()) {
+                flutterEngine.getActivityControlSurface().detachFromActivityForConfigChanges();
+            } else {
+                flutterEngine.getActivityControlSurface().detachFromActivity();
+            }
         }
-
         Utils.fixInputMethodManagerLeak(host.getActivity());
 
     }
@@ -248,6 +254,7 @@ public class FlutterActivityAndFragmentDelegate implements IFlutterViewContainer
         mSyncer.onBackPressed();
 
         ensureAlive();
+
     }
 
 
@@ -465,9 +472,8 @@ public class FlutterActivityAndFragmentDelegate implements IFlutterViewContainer
          * Hook for the host to create/provide a {@link PlatformPlugin} if the associated
          * Flutter experience should control system chrome.
          */
-        @Nullable
-        XPlatformPlugin providePlatformPlugin( @NonNull FlutterEngine flutterEngine);
-
+        PlatformPlugin providePlatformPlugin(
+                @Nullable Activity activity, @NonNull FlutterEngine flutterEngine);
         /**
          * Hook for the host to configure the {@link FlutterEngine} as desired.
          */

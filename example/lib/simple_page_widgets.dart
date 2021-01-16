@@ -1,34 +1,16 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_boost/flutter_boost.dart';
 import 'package:flutter_boost_example/platform_view.dart';
 
 class FirstRouteWidget extends StatefulWidget {
   @override
-  State<StatefulWidget> createState() => _FirstRouteWidgetState();
-}
-
-class _FirstRouteWidgetState extends State<FirstRouteWidget> {
-  _FirstRouteWidgetState();
-
-  // flutter 侧MethodChannel配置，channel name需要和native侧一致
-  static const MethodChannel _methodChannel = MethodChannel('flutter_native_channel');
-  String _systemVersion = '';
-
-  Future<dynamic> _getPlatformVersion() async {
-
-    try {
-      final String result = await _methodChannel.invokeMethod('getPlatformVersion');
-      print('getPlatformVersion:' + result);
-      setState(() {
-        _systemVersion = result;
-      });
-    } on PlatformException catch (e) {
-      print(e.message);
-    }
-
+  State<StatefulWidget> createState() {
+    return new _FirstRouteWidgetState();
   }
+}
+class _FirstRouteWidgetState extends State<FirstRouteWidget>{
+  _FirstRouteWidgetState();
 
   @override
   void initState() {
@@ -63,90 +45,90 @@ class _FirstRouteWidgetState extends State<FirstRouteWidget> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('First Route')),
+      appBar: AppBar(
+        title: Text('First Route'),
+      ),
       body: Center(
-        child: Column(
+        child:
+        Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
+          children: 
+          <Widget>[
             RaisedButton(
-              child: const Text('Open native page'),
-              onPressed: () {
-                print('open natve page!');
-                FlutterBoost.singleton
-                    .open('native')
-                    .then((Map<dynamic, dynamic> value) {
-                  print(
-                      'call me when page is finished. did recieve native route result $value');
-                });
-              },
-            ),
-            RaisedButton(
-              child: const Text('Open FF route'),
-              onPressed: () {
-                print('open FF page!');
-                FlutterBoost.singleton
-                    .open('firstFirst')
-                    .then((Map<dynamic, dynamic> value) {
-                  print(
-                      'call me when page is finished. did recieve FF route result $value');
-                });
-              },
-            ),
-            RaisedButton(
-              child: const Text('Open second route1'),
-              onPressed: () {
-                print('open second page!');
-                FlutterBoost.singleton
-                    .open('second')
-                    .then((Map<dynamic, dynamic> value) {
-                  print(
-                      'call me when page is finished. did recieve second route result $value');
-                });
-              },
-            ),
-            RaisedButton(
-              child: const Text('Present second stateful route'),
-              onPressed: () {
-                print('Present second stateful page!');
-                FlutterBoost.singleton.open('secondStateful',
-                    urlParams: <String, dynamic>{
-                      'present': true
-                    }).then((Map<dynamic, dynamic> value) {
-                  print(
-                      'call me when page is finished. did recieve second stateful route result $value');
-                });
-              },
-            ),
-            RaisedButton(
-              child: const Text('Present second route'),
-              onPressed: () {
-                print('Present second page!');
-                FlutterBoost.singleton.open('second',
-                    urlParams: <String, dynamic>{
-                      'present': true
-                    }).then((Map<dynamic, dynamic> value) {
-                  print(
-                      'call me when page is finished. did recieve second route result $value');
-                });
-              },
-            ),
-            RaisedButton(
-              child: Text('Get system version by method channel:' + _systemVersion),
-              onPressed: () => _getPlatformVersion(),
-            ),
-          ],
+                child: Text('Open native page'),
+                onPressed: () {
+                  print("open native page!");
+                  FlutterBoost.singleton.open("native").then((Map<dynamic,dynamic> value) {
+                    print(
+                        "call me when page is finished. did receive native route result $value");
+                  });
+                },
+              ),
+              RaisedButton(
+                child: Text('Open FF route'),
+                onPressed: () {
+                  print("open FF page!");
+                  FlutterBoost.singleton.open("firstFirst").then((Map value) {
+                    print(
+                        "call me when page is finished. did receive FF route result $value");
+                  });
+                },
+              ),
+              RaisedButton(
+                child: Text('Open second route1'),
+                onPressed: () {
+                  print("open second page!");
+                  FlutterBoost.singleton.open("second").then((Map<dynamic,dynamic> value) {
+                    print(
+                        "call me when page is finished. did receive second route result $value");
+                  });
+                },
+              ),
+
+              RaisedButton(
+                  child: Text('Present second stateful route'),
+                  onPressed: () {
+                    print("Present second stateful page!");
+                    FlutterBoost.singleton.open("secondStateful",urlParams:<String,dynamic>{"present":true}).then((Map value) {
+                      print(
+                          "call me when page is finished. did receive second stateful route result $value");
+                    });
+                  },
+                ),
+                RaisedButton(
+                  child: Text('Present second route'),
+                  onPressed: () {
+                    print("Present second page!");
+                    FlutterBoost.singleton.open("second",urlParams:<String,dynamic>{"present":true}).then((Map<dynamic,dynamic> value) {
+                      print(
+                          "call me when page is finished. did receive second route result $value");
+                    });
+                  },
+                ),
+
+                RaisedButton(
+                  child: Text('Flutter to Flutter with Animation'),
+                  onPressed: () {
+                    FlutterBoost.singleton.open("f2f_first").then((Map<dynamic,dynamic> value) {
+                      print(
+                          "call me when page is finished. did receive second route result $value");
+                    });
+                  }
+                )
+            ],
         ),
       ),
     );
   }
 }
-
 class FirstFirstRouteWidget extends StatefulWidget {
   @override
-  State<StatefulWidget> createState() => _FirstFirstRouteWidgetState();
+  State<StatefulWidget> createState() {
+    return new _FirstFirstRouteWidgetState();
+  }
 }
 
-class _FirstFirstRouteWidgetState extends State<FirstFirstRouteWidget> {
+class _FirstFirstRouteWidgetState extends State<FirstFirstRouteWidget>{
   _FirstFirstRouteWidgetState();
 
   @override
@@ -182,18 +164,20 @@ class _FirstFirstRouteWidgetState extends State<FirstFirstRouteWidget> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('First Route')),
+      appBar: AppBar(
+        title: Text('First Route'),
+      ),
       body: Center(
         child: RaisedButton(
-          child: const Text('Open first route'),
+          child: Text('Open first route'),
           onPressed: () {
-            print('open first page again!');
-            FlutterBoost.singleton
-                .open('first')
-                .then((Map<dynamic, dynamic> value) {
-              print('did recieve first route result');
-              print('did recieve first route result $value');
+
+            print("open first page again!");
+            FlutterBoost.singleton.open("first").then((Map value){
+              print("did receive first route result");
+              print("did receive first route result $value");
             });
+
           },
         ),
       ),
@@ -203,58 +187,64 @@ class _FirstFirstRouteWidgetState extends State<FirstFirstRouteWidget> {
 
 class EmbeddedFirstRouteWidget extends StatefulWidget {
   @override
-  State<StatefulWidget> createState() => _EmbeddedFirstRouteWidgetState();
+  State<StatefulWidget> createState() {
+    // TODO: implement createState
+    return _EmbeddedFirstRouteWidgetState();
+  }
+
 }
 
 class _EmbeddedFirstRouteWidgetState extends State<EmbeddedFirstRouteWidget> {
   @override
   Widget build(BuildContext context) {
-    print('_EmbededFirstRouteWidgetState build called!');
+    print('_EmbeddedFirstRouteWidgetState build called!');
     return Scaffold(
       body: Center(
         child: RaisedButton(
-          child: const Text('Open second route2'),
+          child: Text('Open second route2'),
           onPressed: () {
-            print('open second page!');
-            FlutterBoost.singleton
-                .open('second')
-                .then((Map<dynamic, dynamic> value) {
+            print("open second page!");
+            FlutterBoost.singleton.open("second").then((Map<dynamic,dynamic> value) {
               print(
-                  'call me when page is finished. did recieve second route result $value');
+                  "call me when page is finished. did receive second route result $value");
             });
           },
         ),
       ),
     );
   }
-
   @override
   void dispose() {
-    print('[XDEBUG]:_EmbededFirstRouteWidgetState disposing~');
+    print('[XDEBUG]:_EmbeddedFirstRouteWidgetState disposing~');
     super.dispose();
   }
 }
 
 class SecondStatefulRouteWidget extends StatefulWidget {
   @override
-  State<StatefulWidget> createState() => _SecondStatefulRouteWidgetState();
+  State<StatefulWidget> createState() {
+    // TODO: implement createState
+    return _SecondStatefulRouteWidgetState();
+  }
 }
-
-class _SecondStatefulRouteWidgetState extends State<SecondStatefulRouteWidget> {
+class _SecondStatefulRouteWidgetState extends State<SecondStatefulRouteWidget>{
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('SecondStateful Route')),
+      appBar: AppBar(
+        title: Text("SecondStateful Route"),
+      ),
       body: Center(
         child: RaisedButton(
           onPressed: () {
             // Navigate back to first route when tapped.
-            final BoostContainerSettings settings =
+
+            BoostContainerSettings settings =
                 BoostContainer.of(context).settings;
             FlutterBoost.singleton.close(settings.uniqueId,
-                result: <String, dynamic>{'result': 'data from second'});
+                result: <String,dynamic>{"result": "data from second"});
           },
-          child: const Text('Go back with result!'),
+          child: Text('Go back with result!'),
         ),
       ),
     );
@@ -271,19 +261,20 @@ class SecondRouteWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Second Route')),
+      appBar: AppBar(
+        title: Text("Second Route"),
+      ),
       body: Center(
         child: RaisedButton(
           onPressed: () {
             // Navigate back to first route when tapped.
-            final BoostContainerSettings settings =
+
+            BoostContainerSettings settings =
                 BoostContainer.of(context).settings;
-            FlutterBoost.singleton.close(
-              settings.uniqueId,
-              result: <String, dynamic>{'result': 'data from second'},
-            );
+            FlutterBoost.singleton.close(settings.uniqueId,
+                result: <String,dynamic>{"result": "data from second"});
           },
-          child: const Text('Go back with result!'),
+          child: Text('Go back with result!'),
         ),
       ),
     );
@@ -294,13 +285,15 @@ class TabRouteWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Tab Route')),
+      appBar: AppBar(
+        title: Text("Tab Route"),
+      ),
       body: Center(
         child: RaisedButton(
           onPressed: () {
-            FlutterBoost.singleton.open('second');
+            FlutterBoost.singleton.open("second");
           },
-          child: const Text('Open second route3'),
+          child: Text('Open second route3'),
         ),
       ),
     );
@@ -311,17 +304,17 @@ class PlatformRouteWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Platform Route')),
+      appBar: AppBar(
+        title:Text("Platform Route"),
+      ),
       body: Center(
         child: RaisedButton(
-          child: const TextView(),
+          child: TextView(),
           onPressed: () {
-            print('open second page!');
-            FlutterBoost.singleton
-                .open('second')
-                .then((Map<dynamic, dynamic> value) {
+            print("open second page!");
+            FlutterBoost.singleton.open("second").then((Map<dynamic,dynamic> value) {
               print(
-                  'call me when page is finished. did recieve second route result $value');
+                  "call me when page is finished. did receive second route result $value");
             });
           },
         ),
@@ -329,11 +322,9 @@ class PlatformRouteWidget extends StatelessWidget {
     );
   }
 }
-
 class FlutterRouteWidget extends StatefulWidget {
-  const FlutterRouteWidget({this.params, this.message});
-
-  final Map<String, dynamic> params;
+  FlutterRouteWidget({this.params,this.message});
+  final Map params;
   final String message;
 
   @override
@@ -341,229 +332,190 @@ class FlutterRouteWidget extends StatefulWidget {
 }
 
 class _FlutterRouteWidgetState extends State<FlutterRouteWidget> {
-
-  // flutter 侧MethodChannel配置，channel name需要和native侧一致
-  static const MethodChannel _methodChannel = MethodChannel('flutter_native_channel');
-  String _systemVersion = '';
-
-  Future<dynamic> _getPlatformVersion() async {
-
-    try {
-      final String result = await _methodChannel.invokeMethod('getPlatformVersion');
-      print('getPlatformVersion:' + result);
-      setState(() {
-        _systemVersion = result;
-      });
-    } on PlatformException catch (e) {
-      print(e.message);
-    }
-
-  }
+  final TextEditingController _usernameController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
-    final String message = widget.message;
+    final String message=widget.message;
     return Scaffold(
       appBar: AppBar(
-        brightness: Brightness.light,
+        brightness:Brightness.light,
         backgroundColor: Colors.white,
-        textTheme: const TextTheme(title: TextStyle(color: Colors.black)),
-        title: const Text('flutter_boost_example'),
+        textTheme:new TextTheme(title: TextStyle(color: Colors.black)) ,
+
+        title: Text('flutter_boost_example'),
       ),
       body: SingleChildScrollView(
-        child: Container(
-          margin: const EdgeInsets.all(24.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Container(
-                margin: const EdgeInsets.only(top: 10.0, bottom: 20.0),
-                child: Text(
-                  message ??
-                      'This is a flutter activity \n params:${widget.params}',
-                  style: TextStyle(fontSize: 28.0, color: Colors.blue),
-                ),
-                alignment: AlignmentDirectional.center,
-              ),
-              const CupertinoTextField(
-                prefix: Icon(
-                  CupertinoIcons.person_solid,
-                  color: CupertinoColors.lightBackgroundGray,
-                  size: 28.0,
-                ),
-                padding: EdgeInsets.symmetric(horizontal: 6.0, vertical: 12.0),
-                clearButtonMode: OverlayVisibilityMode.editing,
-                textCapitalization: TextCapitalization.words,
-                autocorrect: false,
-                decoration: BoxDecoration(
-                  border: Border(
-                    bottom: BorderSide(
-                        width: 0.0, color: CupertinoColors.inactiveGray),
+        child:Container(
+            margin: const EdgeInsets.all(24.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Container(
+                  margin: const EdgeInsets.only(top: 10.0,bottom: 20.0),
+                  child: Text(
+                    message ?? "This is a flutter activity \n params:${widget.params}",
+                    style: TextStyle(fontSize: 28.0, color: Colors.blue),
                   ),
+                  alignment: AlignmentDirectional.center,
                 ),
-                placeholder: 'Name',
-              ),
-              InkWell(
-                child: Container(
-                  padding: const EdgeInsets.all(8.0),
-                  margin: const EdgeInsets.all(8.0),
-                  color: Colors.yellow,
-                  child: const Text(
-                    'open native page',
-                    style: TextStyle(fontSize: 22.0, color: Colors.black),
-                  ),
+//                Expanded(child: Container()),
+        const CupertinoTextField(
+          prefix: Icon(
+            CupertinoIcons.person_solid,
+            color: CupertinoColors.lightBackgroundGray,
+            size: 28.0,
+          ),
+          padding: EdgeInsets.symmetric(horizontal: 6.0, vertical: 12.0),
+          clearButtonMode: OverlayVisibilityMode.editing,
+          textCapitalization: TextCapitalization.words,
+        ),
+                new TextField(
+                  enabled: true,
+                  autocorrect: true,
+                  style: const TextStyle(
+                      fontSize: 20.0,
+                      color: const Color(0xFF222222),
+                      fontWeight: FontWeight.w500),
+                ), new TextField(
+                  controller: new TextEditingController(),
+                  focusNode:FocusNode(),
+                  enabled: true,
+                  autocorrect: false,
+                  style: const TextStyle(
+                      fontSize: 20.0,
+                      color: const Color(0xFF222222),
+                      fontWeight: FontWeight.w500),
                 ),
+                InkWell(
+                  child: Container(
+                      padding: const EdgeInsets.all(8.0),
+                      margin: const EdgeInsets.all(8.0),
+                      color: Colors.yellow,
+                      child: Text(
+                        'open native page',
+                        style: TextStyle(fontSize: 22.0, color: Colors.black),
+                      )),
 
-                /// 后面的参数会在native的IPlatform.startActivity方法回调中拼接到url的query部分。
-                /// 例如：sample://nativePage?aaa=bbb
-                onTap: () => FlutterBoost.singleton.open(
-                  'sample://nativePage',
-                  urlParams: <String, dynamic>{
-                    'query': <String, dynamic>{'aaa': 'bbb'}
+                  ///后面的参数会在native的IPlatform.startActivity方法回调中拼接到url的query部分。
+                  ///例如：sample://nativePage?aaa=bbb
+                  onTap: () => FlutterBoost.singleton
+                      .open("sample://nativePage", urlParams: <String,dynamic>{
+                    "query": {"aaa": "bbb"}
+                  }),
+                ),
+                InkWell(
+                  child: Container(
+                      padding: const EdgeInsets.all(8.0),
+                      margin: const EdgeInsets.all(8.0),
+                      color: Colors.yellow,
+                      child: Text(
+                        'open first',
+                        style: TextStyle(fontSize: 22.0, color: Colors.black),
+                      )),
+
+                  ///后面的参数会在native的IPlatform.startActivity方法回调中拼接到url的query部分。
+                  ///例如：sample://nativePage?aaa=bbb
+                  onTap: () => FlutterBoost.singleton
+                      .open("first", urlParams: <String,dynamic>{
+                    "query": {"aaa": "bbb"}
+                  }),
+                ),
+                InkWell(
+                  child: Container(
+                      padding: const EdgeInsets.all(8.0),
+                      margin: const EdgeInsets.all(8.0),
+                      color: Colors.yellow,
+                      child: Text(
+                        'open second',
+                        style: TextStyle(fontSize: 22.0, color: Colors.black),
+                      )),
+
+                  ///后面的参数会在native的IPlatform.startActivity方法回调中拼接到url的query部分。
+                  ///例如：sample://nativePage?aaa=bbb
+                  onTap: () => FlutterBoost.singleton
+                      .open("second", urlParams:<String,dynamic> {
+                    "query": {"aaa": "bbb"}
+                  }),
+                ),
+                InkWell(
+                  child: Container(
+                      padding: const EdgeInsets.all(8.0),
+                      margin: const EdgeInsets.all(8.0),
+                      color: Colors.yellow,
+                      child: Text(
+                        'open tab',
+                        style: TextStyle(fontSize: 22.0, color: Colors.black),
+                      )),
+
+                  ///后面的参数会在native的IPlatform.startActivity方法回调中拼接到url的query部分。
+                  ///例如：sample://nativePage?aaa=bbb
+                  onTap: () => FlutterBoost.singleton
+                      .open("tab", urlParams:<String,dynamic> {
+                    "query": {"aaa": "bbb"}
+                  }),
+                ),
+                InkWell(
+                  child: Container(
+                      padding: const EdgeInsets.all(8.0),
+                      margin: const EdgeInsets.all(8.0),
+                      color: Colors.yellow,
+                      child: Text(
+                        'open flutter page',
+                        style: TextStyle(fontSize: 22.0, color: Colors.black),
+                      )),
+
+                  ///后面的参数会在native的IPlatform.startActivity方法回调中拼接到url的query部分。
+                  ///例如：sample://nativePage?aaa=bbb
+                  onTap: () => FlutterBoost.singleton
+                      .open("sample://flutterPage", urlParams:<String,dynamic> {
+                    "query": {"aaa": "bbb"}
+                  }),
+                ),
+                InkWell(
+                  child: Container(
+                      padding: const EdgeInsets.all(8.0),
+                      margin: const EdgeInsets.all(8.0),
+                      color: Colors.yellow,
+                      child: Text(
+                        'push flutter widget',
+                        style: TextStyle(fontSize: 22.0, color: Colors.black),
+                      )),
+                  onTap: () {
+                  Navigator.push<dynamic>(context,
+                        MaterialPageRoute<dynamic>(builder: (_) => PushWidget()));
                   },
                 ),
-              ),
-              InkWell(
-                child: Container(
-                  padding: const EdgeInsets.all(8.0),
-                  margin: const EdgeInsets.all(8.0),
-                  color: Colors.yellow,
-                  child: const Text(
-                    'open first',
-                    style: TextStyle(fontSize: 22.0, color: Colors.black),
-                  ),
-                ),
 
-                /// 后面的参数会在native的IPlatform.startActivity方法回调中拼接到url的query部分。
-                /// 例如：sample://nativePage?aaa=bbb
-                onTap: () => FlutterBoost.singleton.open(
-                  'first',
-                  urlParams: <String, dynamic>{
-                    'query': <String, dynamic>{'aaa': 'bbb'}
-                  },
-                ),
-              ),
-              InkWell(
-                child: Container(
-                  padding: const EdgeInsets.all(8.0),
-                  margin: const EdgeInsets.all(8.0),
-                  color: Colors.yellow,
-                  child: const Text(
-                    'open second',
-                    style: TextStyle(fontSize: 22.0, color: Colors.black),
-                  ),
-                ),
-
-                /// 后面的参数会在native的IPlatform.startActivity方法回调中拼接到url的query部分。
-                /// 例如：sample://nativePage?aaa=bbb
-                onTap: () => FlutterBoost.singleton.open(
-                  'second',
-                  urlParams: <String, dynamic>{
-                    'query': <String, dynamic>{'aaa': 'bbb'}
-                  },
-                ),
-              ),
-              InkWell(
-                child: Container(
-                  padding: const EdgeInsets.all(8.0),
-                  margin: const EdgeInsets.all(8.0),
-                  color: Colors.yellow,
-                  child: const Text(
-                    'open tab',
-                    style: TextStyle(fontSize: 22.0, color: Colors.black),
-                  ),
-                ),
-
-                /// 后面的参数会在native的IPlatform.startActivity方法回调中拼接到url的query部分。
-                /// 例如：sample://nativePage?aaa=bbb
-                onTap: () => FlutterBoost.singleton.open(
-                  'tab',
-                  urlParams: <String, dynamic>{
-                    'query': <String, dynamic>{'aaa': 'bbb'}
-                  },
-                ),
-              ),
-              InkWell(
-                child: Container(
-                  padding: const EdgeInsets.all(8.0),
-                  margin: const EdgeInsets.all(8.0),
-                  color: Colors.yellow,
-                  child: const Text(
-                    'open flutter page',
-                    style: TextStyle(fontSize: 22.0, color: Colors.black),
-                  ),
-                ),
-
-                /// 后面的参数会在native的IPlatform.startActivity方法回调中拼接到url的query部分。
-                /// 例如：sample://nativePage?aaa=bbb
-                onTap: () => FlutterBoost.singleton.open(
-                  'sample://flutterPage',
-                  urlParams: <String, dynamic>{
-                    'query': <String, dynamic>{'aaa': 'bbb'}
-                  },
-                ),
-              ),
-              InkWell(
-                child: Container(
-                  padding: const EdgeInsets.all(8.0),
-                  margin: const EdgeInsets.all(8.0),
-                  color: Colors.yellow,
-                  child: const Text(
-                    'push flutter widget',
-                    style: TextStyle(fontSize: 22.0, color: Colors.black),
-                  ),
-                ),
-                onTap: () {
-                  Navigator.push<dynamic>(
-                    context,
-                    MaterialPageRoute<dynamic>(builder: (_) => PushWidget()),
-                  );
-                },
-              ),
-              InkWell(
-                child: Container(
-                  padding: const EdgeInsets.all(8.0),
-                  margin: const EdgeInsets.all(8.0),
-                  color: Colors.yellow,
-                  child: const Text(
-                    'push Platform demo',
-                    style: TextStyle(fontSize: 22.0, color: Colors.black),
-                  ),
-                ),
-                onTap: () {
-                  Navigator.push<dynamic>(
-                    context,
-                    MaterialPageRoute<dynamic>(
-                        builder: (_) => PlatformRouteWidget()),
-                  );
-                },
-              ),
-              InkWell(
-                child: Container(
-                  padding: const EdgeInsets.all(8.0),
-                  margin: const EdgeInsets.all(8.0),
-                  color: Colors.yellow,
-                  child: const Text(
-                    'open flutter fragment page',
-                    style: TextStyle(fontSize: 22.0, color: Colors.black),
-                  ),
-                ),
-                onTap: () =>
-                    FlutterBoost.singleton.open('sample://flutterFragmentPage'),
-              ),
               InkWell(
                 child: Container(
                     padding: const EdgeInsets.all(8.0),
                     margin: const EdgeInsets.all(8.0),
                     color: Colors.yellow,
                     child: Text(
-                      'get system version by method channel:' + _systemVersion,
+                      'push Platform demo',
                       style: TextStyle(fontSize: 22.0, color: Colors.black),
                     )),
-                onTap: () => _getPlatformVersion(),
+                onTap: () {
+                  Navigator.push<dynamic>(context,
+                      MaterialPageRoute<dynamic>(builder: (_) => PlatformRouteWidget()));
+                },
               ),
-            ],
-          ),
+                InkWell(
+                  child: Container(
+                      padding: const EdgeInsets.all(8.0),
+                      margin: const EdgeInsets.all(8.0),
+                      color: Colors.yellow,
+                      child: Text(
+                        'open flutter fragment page',
+                        style: TextStyle(fontSize: 22.0, color: Colors.black),
+                      )),
+                  onTap: () => FlutterBoost.singleton
+                      .open("sample://flutterFragmentPage"),
+                ),
+              ],
+            ),
+
         ),
       ),
     );
@@ -571,21 +523,23 @@ class _FlutterRouteWidgetState extends State<FlutterRouteWidget> {
 }
 
 class FragmentRouteWidget extends StatelessWidget {
-  const FragmentRouteWidget(this.params);
+  final Map params;
 
-  final Map<String, dynamic> params;
+  FragmentRouteWidget(this.params);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('flutter_boost_example')),
+      appBar: AppBar(
+        title: Text('flutter_boost_example'),
+      ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           Container(
             margin: const EdgeInsets.only(top: 80.0),
             child: Text(
-              'This is a flutter fragment',
+              "This is a flutter fragment",
               style: TextStyle(fontSize: 28.0, color: Colors.blue),
             ),
             alignment: AlignmentDirectional.center,
@@ -593,7 +547,7 @@ class FragmentRouteWidget extends StatelessWidget {
           Container(
             margin: const EdgeInsets.only(top: 32.0),
             child: Text(
-              '${params['tag']}' ?? '',
+              params['tag'].toString(),
               style: TextStyle(fontSize: 28.0, color: Colors.red),
             ),
             alignment: AlignmentDirectional.center,
@@ -601,40 +555,37 @@ class FragmentRouteWidget extends StatelessWidget {
           Expanded(child: Container()),
           InkWell(
             child: Container(
-              padding: const EdgeInsets.all(8.0),
-              margin: const EdgeInsets.all(8.0),
-              color: Colors.yellow,
-              child: const Text(
-                'open native page',
-                style: TextStyle(fontSize: 22.0, color: Colors.black),
-              ),
-            ),
-            onTap: () => FlutterBoost.singleton.open('sample://nativePage'),
+                padding: const EdgeInsets.all(8.0),
+                margin: const EdgeInsets.all(8.0),
+                color: Colors.yellow,
+                child: Text(
+                  'open native page',
+                  style: TextStyle(fontSize: 22.0, color: Colors.black),
+                )),
+            onTap: () => FlutterBoost.singleton.open("sample://nativePage"),
           ),
           InkWell(
             child: Container(
-              padding: const EdgeInsets.all(8.0),
-              margin: const EdgeInsets.all(8.0),
-              color: Colors.yellow,
-              child: const Text(
-                'open flutter page',
-                style: TextStyle(fontSize: 22.0, color: Colors.black),
-              ),
-            ),
-            onTap: () => FlutterBoost.singleton.open('sample://flutterPage'),
+                padding: const EdgeInsets.all(8.0),
+                margin: const EdgeInsets.all(8.0),
+                color: Colors.yellow,
+                child: Text(
+                  'open flutter page',
+                  style: TextStyle(fontSize: 22.0, color: Colors.black),
+                )),
+            onTap: () => FlutterBoost.singleton.open("sample://flutterPage"),
           ),
           InkWell(
             child: Container(
-              padding: const EdgeInsets.all(8.0),
-              margin: const EdgeInsets.fromLTRB(8.0, 8.0, 8.0, 80.0),
-              color: Colors.yellow,
-              child: const Text(
-                'open flutter fragment page',
-                style: TextStyle(fontSize: 22.0, color: Colors.black),
-              ),
-            ),
+                padding: const EdgeInsets.all(8.0),
+                margin: const EdgeInsets.fromLTRB(8.0, 8.0, 8.0, 80.0),
+                color: Colors.yellow,
+                child: Text(
+                  'open flutter fragment page',
+                  style: TextStyle(fontSize: 22.0, color: Colors.black),
+                )),
             onTap: () =>
-                FlutterBoost.singleton.open('sample://flutterFragmentPage'),
+                FlutterBoost.singleton.open("sample://flutterFragmentPage"),
           )
         ],
       ),
@@ -651,7 +602,14 @@ class _PushWidgetState extends State<PushWidget> {
   VoidCallback _backPressedListenerUnsub;
 
   @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+  }
+
+  @override
   void didChangeDependencies() {
+    // TODO: implement didChangeDependencies
     super.didChangeDependencies();
 
 //    if (_backPressedListenerUnsub == null) {
@@ -667,6 +625,7 @@ class _PushWidgetState extends State<PushWidget> {
 
   @override
   void dispose() {
+    // TODO: implement dispose
     print('[XDEBUG] - PushWidget is disposing~');
     super.dispose();
     _backPressedListenerUnsub?.call();
@@ -674,6 +633,6 @@ class _PushWidgetState extends State<PushWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return const FlutterRouteWidget(message: 'Pushed Widget');
+    return FlutterRouteWidget(message: "Pushed Widget");
   }
 }

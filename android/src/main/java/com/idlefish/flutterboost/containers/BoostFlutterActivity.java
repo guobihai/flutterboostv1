@@ -1,7 +1,6 @@
 package com.idlefish.flutterboost.containers;
 
 
-import android.annotation.SuppressLint;
 import android.app.Activity;
 import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.LifecycleOwner;
@@ -21,8 +20,8 @@ import androidx.annotation.Nullable;
 import android.view.*;
 import android.widget.*;
 import com.idlefish.flutterboost.FlutterBoost;
-import com.idlefish.flutterboost.XFlutterView;
-import com.idlefish.flutterboost.XPlatformPlugin;
+import com.idlefish.flutterboost.interfaces.IFlutterViewContainer;
+
 import io.flutter.Log;
 import io.flutter.embedding.android.DrawableSplashScreen;
 import io.flutter.embedding.android.FlutterView;
@@ -56,8 +55,6 @@ public class BoostFlutterActivity extends Activity
 
     // Default configuration.
     protected static final String DEFAULT_BACKGROUND_MODE = BackgroundMode.opaque.name();
-
-    private static XPlatformPlugin sXPlatformPlugin;
 
     public static Intent createDefaultIntent(@NonNull Context launchContext) {
         return withNewEngine().build(launchContext);
@@ -134,6 +131,9 @@ public class BoostFlutterActivity extends Activity
         lifecycle = new LifecycleRegistry(this);
     }
 
+    public IFlutterViewContainer getIFlutterViewContainer(){
+        return delegate;
+    }
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         switchLaunchThemeForNormalTheme();
@@ -187,7 +187,6 @@ public class BoostFlutterActivity extends Activity
      */
     @Nullable
     @SuppressWarnings("deprecation")
-    @SuppressLint("WrongConstant")
     private Drawable getSplashScreenFromManifest() {
         try {
             ActivityInfo activityInfo = getPackageManager().getActivityInfo(
@@ -244,7 +243,7 @@ public class BoostFlutterActivity extends Activity
 
     }
 
-    protected XFlutterView getFlutterView() {
+    protected FlutterView getFlutterView() {
         return delegate.getFlutterView();
     }
 
@@ -442,9 +441,13 @@ public class BoostFlutterActivity extends Activity
     }
 
     @Nullable
-    @Override
-    public XPlatformPlugin providePlatformPlugin(@NonNull FlutterEngine flutterEngine) {
-        return BoostViewUtils.getPlatformPlugin(flutterEngine.getPlatformChannel());
+    public PlatformPlugin providePlatformPlugin(
+            @Nullable Activity activity, @NonNull FlutterEngine flutterEngine) {
+        if (activity != null) {
+            return new PlatformPlugin(getActivity(), flutterEngine.getPlatformChannel());
+        } else {
+            return null;
+        }
     }
 
     /**
